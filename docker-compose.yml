@@ -1,0 +1,141 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  discovery-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: discovery-service
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  config-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      EUREKA_URL: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+
+  account-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: account-service
+    ports:
+      - "8081:8081"
+    environment:
+      EUREKA_URL: http://discovery-service:8761/eureka/
+      CONFIG_URL: http://config-server:8888
+    depends_on:
+      - discovery-service
+      - config-server
+
+  transaction-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: transaction-service
+    ports:
+      - "8082:8082"
+    environment:
+      EUREKA_URL: http://discovery-service:8761/eureka/
+      CONFIG_URL: http://config-server:8888
+      KAFKA_BOOTSTRAP: kafka:29092
+      KAFKA_ENABLED: "true"
+    depends_on:
+      - discovery-service
+      - config-server
+      - account-service
+      - kafka
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: notification-service
+    ports:
+      - "8083:8083"
+    environment:
+      EUREKA_URL: http://discovery-service:8761/eureka/
+      KAFKA_BOOTSTRAP: kafka:29092
+    depends_on:
+      - discovery-service
+      - kafka
+
+  ai-assistant:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: ai-assistant
+    ports:
+      - "8084:8084"
+    environment:
+      EUREKA_URL: http://discovery-service:8761/eureka/
+      ACCOUNT_URL: http://account-service:8081
+      TRANSACTION_URL: http://transaction-service:8082
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      - account-service
+      - transaction-service
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_URL: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - account-service
+      - transaction-service
+      - ai-assistant
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - gateway-service

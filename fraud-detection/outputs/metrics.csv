@@ -1,0 +1,2 @@
+precision_fraud,recall_fraud,f1_fraud,average_precision,threshold,fraud_ratio
+0.22,0.21568627450980393,0.21782178217821782,0.17599818762090003,0.75838525799005,0.0514

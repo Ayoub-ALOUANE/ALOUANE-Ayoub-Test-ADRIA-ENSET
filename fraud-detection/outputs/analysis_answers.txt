@@ -1,0 +1,19 @@
+
+1. Pourquoi l'accuracy seule est-elle insuffisante ?
+   Les classes sont fortement desequilibrees (~quelques % de fraudes). Un modele
+   qui predit toujours 'legitime' obtient une accuracy elevee tout en manquant
+   100% des fraudes. Precision/Recall/F1/AP sur la classe fraude sont plus pertinents.
+
+2. Compromis faux positifs vs fraudes non detectees ?
+   Faux positifs (FP) = clients legitimes bloques => friction / cout operationnel.
+   Faux negatifs (FN) = fraudes non detectees => pertes financieres directes.
+   Le metier fixe le seuil selon le cout relatif FP vs FN.
+
+3. Effet d'une diminution du seuil de decision ?
+   Plus de transactions classees 'fraude' => recall augmente, precision diminue
+   (moins de FN, plus de FP). Utile si le cout d'une fraude manquee est eleve.
+
+4. Pourquoi privilegier une validation temporelle sur donnees reelles ?
+   Les patterns de fraude evoluent dans le temps (concept drift). Un split aleatoire
+   melange passe/futur et surestime les performances. Une validation temporelle
+   (train sur passe, test sur futur) simule mieux le deploiement en production.

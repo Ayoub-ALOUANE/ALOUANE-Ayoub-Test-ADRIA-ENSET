@@ -1,0 +1,12 @@
+bank:
+  transaction:
+    max-amount: 1000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

@@ -1,0 +1,33 @@
+# Maven
+**/target/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+fraud-detection/.ipynb_checkpoints/
+
+# Env / secrets
+.env
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
